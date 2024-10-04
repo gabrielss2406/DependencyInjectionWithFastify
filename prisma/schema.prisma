@@ -1,0 +1,118 @@
+enum RequestStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String   @id @default(uuid()) @db.Uuid
+  username       String   @unique
+  name           String
+  email          String   @unique
+  password       String
+  profilePicture String?
+  bio            String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  posts                     Post[]
+  likes                     Like[]
+  commentLikes              CommentLike[]
+  comments                  Comment[]
+  followers                 Follower[]         @relation("FollowingRelation")
+  following                 Follower[]         @relation("FollowerRelation")
+  followersRequestsSent     FollowersRequest[] @relation("RequestSender")
+  followersRequestsReceived FollowersRequest[] @relation("RequestReceiver")
+}
+
+model Post {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user     User        @relation(fields: [userId], references: [id])
+  images   PostImage[]
+  comments Comment[]
+  likes    Like[]
+}
+
+model Comment {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  type      String
+  relatedId String   @db.Uuid
+  isRead    Boolean
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user   User          @relation(fields: [userId], references: [id])
+  likes  CommentLike[]
+  Post   Post?         @relation(fields: [postId], references: [id])
+  postId String?       @db.Uuid
+}
+
+model Like {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  postId    String   @db.Uuid
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+  post Post @relation(fields: [postId], references: [id])
+}
+
+model CommentLike {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  commentId String   @db.Uuid
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user    User    @relation(fields: [userId], references: [id])
+  comment Comment @relation(fields: [commentId], references: [id])
+}
+
+model Follower {
+  id          String   @id @default(uuid()) @db.Uuid
+  followingId String   @db.Uuid
+  followerId  String   @db.Uuid
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  following User @relation("FollowingRelation", fields: [followingId], references: [id])
+  follower  User @relation("FollowerRelation", fields: [followerId], references: [id])
+}
+
+model FollowersRequest {
+  id         String        @id @default(uuid()) @db.Uuid
+  senderId   String        @db.Uuid
+  receiverId String        @db.Uuid
+  status     RequestStatus @default(PENDING)
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+
+  sender   User @relation("RequestSender", fields: [senderId], references: [id])
+  receiver User @relation("RequestReceiver", fields: [receiverId], references: [id])
+}
+
+model PostImage {
+  id        String   @id @default(uuid()) @db.Uuid
+  postId    String   @db.Uuid
+  mediaUrl  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  post Post @relation(fields: [postId], references: [id])
+}
