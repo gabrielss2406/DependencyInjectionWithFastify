@@ -1,14 +1,8 @@
 import { FastifyInstance, FastifyPluginCallback } from 'fastify';
 import { ToDoListController } from '../controllers/ToDoListController';
-import { IToDoListService } from '../models/interfaces/services/IToDoListService';
-
-// Definindo uma interface para o container do Fastify
-interface FastifyContainer {
-    resolve<T>(name: string): T;
-}
 
 const userRouter: FastifyPluginCallback = (app: FastifyInstance, options, done) => {
-    const container = app.container as FastifyContainer;
+    const container = app.container;
     const toDoListController = container.resolve<ToDoListController>('toDoListController');
 
     app.get('/todo', async (request, reply) => {
